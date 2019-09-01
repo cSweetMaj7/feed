@@ -16,8 +16,10 @@ public class Ball : MonoBehaviour
     float nextX;
     float nextY;
     float lastM;
+    int framePass = 1;
     SpriteRenderer sprite;
-
+    Vector2 lastCalculatedPoint;
+    GameObject hitTarget = null;
 
     // Start is called before the first frame update
     void Start()
@@ -25,6 +27,7 @@ public class Ball : MonoBehaviour
         sprite = GetComponent<SpriteRenderer>();
         lastOffsetWidth = sprite.size.x;
         circleOffset = lastOffsetWidth / 2;
+        lastCalculatedPoint = transform.position;
         launch();
     }
 
@@ -44,6 +47,7 @@ public class Ball : MonoBehaviour
         // move thyself
         if(!locked)
         {
+            transform.position = lastCalculatedPoint;
             // see if size needs updating
             if(Mathf.Abs(System.Math.Abs(sprite.size.x - lastOffsetWidth)) > Mathf.Epsilon)
             {
@@ -54,70 +58,182 @@ public class Ball : MonoBehaviour
             // see if slope/roc needs updating
             if (System.Math.Abs(m - lastM) > Mathf.Epsilon)
             {
+                transform.position = new Vector2(0, 0);
                 setRoc();
             }
 
-            // move ball in direction by rate of change
-            float newX = xDir ? transform.position.x + (xRoc * v) : transform.position.x - (xRoc * v);
-            float newY = yDir ? transform.position.y + (yRoc * v) : transform.position.y - (yRoc * v);
-            //Vector2 dest = new Vector2(newX, newY);
+            Vector2 caculatedPosition = calculatNextPoint(transform.position);
 
-            float xDif = Mathf.Abs(newX - transform.position.x) + 0.2f;
-            float yDif = Mathf.Abs(newY - transform.position.y) + 0.2f;
-            //float distance = Mathf.Sqrt((xDif * xDif) + (yDif * yDif)); // make sure this distance is traveled in total
-
-            // raycast out the dest and see what we hit
-            Vector2 vecDirY = yDir ? Vector2.up : -Vector2.up;
-            Vector2 vecDirX = xDir ? Vector2.right : -Vector2.right;
-            Vector2 originX = transform.position;
-            Vector2 originY = transform.position;
-            originX.x = xDir ? originX.x + circleOffset : originX.x - circleOffset;
-            originY.y = yDir ? originY.y + circleOffset : originY.y - circleOffset;
-
-            
-            RaycastHit2D horizontalHitCheck = Physics2D.Raycast(originX, vecDirX, xDif); // h collider
-            RaycastHit2D verticalHitCheck = Physics2D.Raycast(originY, vecDirY, yDif); // v collider
-            
-            if (horizontalHitCheck.collider)
-            {
-                //Debug.Log("X Collide");
-                // invert x
-                xDir = !xDir;
-                newX = xDir ? horizontalHitCheck.point.x + (circleOffset) : horizontalHitCheck.point.x - (circleOffset);
-            }
-            if (verticalHitCheck.collider)
-            {
-                //Debug.Log("Y Collide");
-                // invert y
-                yDir = !yDir;
-                newY = yDir ? verticalHitCheck.point.y + (circleOffset) : verticalHitCheck.point.y - (circleOffset);
-            }
-
-            // place at new calculated position
-            Vector3 newPosition = new Vector3(newX, newY, transform.position.z);
-            transform.position = newPosition;
-
-            if(transform.position.y > 5.0f ||
-               transform.position.y < -5.0f ||
-               transform.position.x > 9.28f ||
-               transform.position.x < -9.28f)
+           if (transform.position.y > 5.0f ||
+           transform.position.y < -5.0f ||
+           transform.position.x > 8.89f ||
+           transform.position.x < -8.89f)
             {
                 Debug.LogError("OOB");
                 Debug.Break();
             }
 
-            vecDirY = yDir ? Vector2.up : -Vector2.up;
-            vecDirX = xDir ? Vector2.right : -Vector2.right;
-
-            originX = transform.position;
-            originY = transform.position;
-
-            originX.x = xDir ? originX.x + circleOffset : originX.x - circleOffset;
-            originY.y = yDir ? originY.y + circleOffset : originY.y - circleOffset;
-
-            Debug.DrawRay(originX, vecDirX, Color.green);
-            Debug.DrawRay(originY, vecDirY, Color.green);
+            // place at new calculated position
+            //transform.position = new Vector3(caculatedPosition.x, caculatedPosition.y, transform.position.z);
+            lastCalculatedPoint = new Vector3(caculatedPosition.x, caculatedPosition.y, transform.position.z);
+            Destroy(hitTarget);
         }
+        framePass = 1;
+    }
+
+    void drawDebugRaysDist(Vector2 originIn, float distance)
+    {
+        // draw debug rays
+        Vector2 originX = originIn;
+        Vector2 originY = originIn;
+
+        originX.x = xDir ? originX.x + circleOffset : originX.x - circleOffset;
+        originY.y = yDir ? originY.y + circleOffset : originY.y - circleOffset;
+
+        Vector2 endX = originX;
+        Vector2 endY = originY;
+
+        endX.x = xDir ? endX.x + distance : endX.x - distance;
+        endY.y = yDir ? endY.y + distance : endY.y - distance;
+
+        //Debug.DrawRay(originX, vecDirX, Color.green);
+        Debug.DrawLine(originX, endX, Color.green);
+        //Debug.DrawRay(originY, vecDirY, Color.green);
+        Debug.DrawLine(originY, endY, Color.green);
+    }
+
+    protected Vector2 calculatNextPoint(Vector2 origin, float xLess=0f, float yLess=0f)
+    {
+        //Debug.Log("Calculating next point");
+        Vector2 nextCalculatedPoint = origin;
+        // move ball in direction by rate of change
+        nextCalculatedPoint.x = xDir ? origin.x + (xRoc * v) : origin.x - (xRoc * v);
+        nextCalculatedPoint.y = yDir ? origin.y + (yRoc * v) : origin.y - (yRoc * v);
+        //Vector2 dest = new Vector2(newX, newY);
+
+        float xDif = (xRoc * v) - xLess; // Mathf.Abs(result.x - origin.x) - xLess;
+        float yDif = (yRoc * v) - yLess; // Mathf.Abs(result.y - origin.y) - yLess;
+
+        //drawDebugRays(result, xDif);
+        //drawDebugRays(result, yDif);
+
+        if (xDif < Mathf.Epsilon || yDif < Mathf.Epsilon)
+        {
+            // trying to move too far
+            xDif = 0;
+            yDif = 0;
+        }
+        //float distance = Mathf.Sqrt((xDif * xDif) + (yDif * yDif)); // make sure this distance is traveled in total
+
+        // raycast out the dest and see what we hit
+        Vector2 vecDirY = yDir ? Vector2.up : -Vector2.up;
+        Vector2 vecDirX = xDir ? Vector2.right : -Vector2.right;
+        Vector2 originX = origin;
+        Vector2 originY = origin;
+        originX.x = xDir ? originX.x + circleOffset : originX.x - circleOffset;
+        originY.y = yDir ? originY.y + circleOffset : originY.y - circleOffset;
+
+        Color lineColor;
+
+        switch (framePass)
+        {
+            case 1:
+                lineColor = Color.green;
+                break;
+
+            case 2:
+                lineColor = Color.yellow;
+                break;
+
+            case 3:
+                lineColor = Color.red;
+                break;
+
+            default:
+                lineColor = Color.black;
+                break;
+        }
+
+        Debug.DrawLine(originX, new Vector2(xDir ? originX.x + xDif : originX.x - xDif, originX.y), lineColor);
+        Debug.DrawLine(originY, new Vector2(originY.x, yDir ? originY.y + yDif : originY.y - yDif), lineColor);
+
+        framePass++;
+
+        RaycastHit2D horizontalHitCheck = Physics2D.Raycast(originX, vecDirX, xDif); // h collider
+        RaycastHit2D verticalHitCheck = Physics2D.Raycast(originY, vecDirY, yDif); // v collider
+
+        // this is where collision logic starts happening
+        if(verticalHitCheck.collider && horizontalHitCheck.collider)
+        {
+            yDir = !yDir;
+            xDir = !xDir;
+
+            hitTarget = verticalHitCheck.collider.gameObject.name == "Target" ? verticalHitCheck.collider.gameObject : null;
+            hitTarget = horizontalHitCheck.collider.gameObject.name == "Target" ? horizontalHitCheck.collider.gameObject : null;
+
+            nextCalculatedPoint = reflectY(verticalHitCheck.point, nextCalculatedPoint, true);
+            //result = reflectX(horizontalHitCheck.point, result);
+        }
+        else if (verticalHitCheck.collider)
+        {
+            //Debug.Log("Y Collide");
+            // invert y
+            yDir = !yDir;
+
+            hitTarget = verticalHitCheck.collider.gameObject.name == "Target" ? verticalHitCheck.collider.gameObject : null;
+
+            nextCalculatedPoint = reflectY(verticalHitCheck.point, nextCalculatedPoint);
+        }
+        else if (horizontalHitCheck.collider)
+        {
+            //Debug.Log("X Collide");
+            // invert x
+            xDir = !xDir;
+
+            hitTarget = horizontalHitCheck.collider.gameObject.name == "Target" ? horizontalHitCheck.collider.gameObject : null;
+
+            nextCalculatedPoint = reflectX(horizontalHitCheck.point, nextCalculatedPoint);
+        }
+
+        return nextCalculatedPoint;
+    }
+
+    Vector2 reflectY(Vector2 hitPoint, Vector2 currentPoint, bool twoHit = false, bool calcNextReflect = false)
+    {
+        float yTraveled = Mathf.Abs(currentPoint.y - hitPoint.y) - circleOffset;
+        float currYRoc = yRoc * v;
+        float reflectDistance = Mathf.Abs(currYRoc - yTraveled);
+        currentPoint.y = yDir ? hitPoint.y + reflectDistance : hitPoint.y - reflectDistance;
+        if(twoHit)
+        {
+            // x also needs to be calculated before recursing
+            currentPoint = reflectX(hitPoint, currentPoint, false, false);
+        }
+        Debug.DrawLine(hitPoint, currentPoint, twoHit ? Color.blue : Color.magenta);
+
+        // adjust for circle offset
+        currentPoint.y = yDir ? currentPoint.y + circleOffset : currentPoint.y - circleOffset;
+
+        return calcNextReflect ? calculatNextPoint(currentPoint, 0f, yTraveled) : currentPoint;
+    }
+
+    Vector2 reflectX(Vector2 hitPoint, Vector2 currentPoint, bool twoHit = false, bool calcNextReflect = false)
+    {
+        float xTraveled = Mathf.Abs(currentPoint.x - hitPoint.x) - circleOffset ;
+        float currXRoc = xRoc * v;
+        float reflectDistance = Mathf.Abs(currXRoc - xTraveled);
+        currentPoint.x = xDir ? hitPoint.x + reflectDistance : hitPoint.x - reflectDistance;
+        if(twoHit)
+        {
+            // y also needs to be calculated before recursing
+            currentPoint = reflectY(hitPoint, currentPoint, false, false);
+        }
+        Debug.DrawLine(hitPoint, currentPoint, Color.cyan);
+
+        // adjust for circle offset
+        currentPoint.x = xDir ? currentPoint.x + circleOffset : currentPoint.x - circleOffset;
+
+        return calcNextReflect ? calculatNextPoint(currentPoint, xTraveled, 0f) : currentPoint;
     }
 
     void launch() // launching from bottom of screen
@@ -134,29 +250,64 @@ public class Ball : MonoBehaviour
     void setRoc()
     {
         lastM = m;
-        xRoc = xDir ? transform.position.x + 0.1f : transform.position.x - 0.1f;
+        xRoc = xDir ? transform.position.x + 0.01f : transform.position.x - 0.01f;
         xRoc = Mathf.Abs(xRoc);
 
         // results in smallest y rate of change
         yRoc = Mathf.Abs(m * xRoc);
 
+        normalizeX();
+        normalizeY();
+
+        Debug.Log("setRoc calc: xRoc-" + xRoc + " yRoc-" + yRoc);
+    }
+
+    void normalizeY()
+    {
         // normalize y rate of change to ~1
         if (yRoc > 1.0f)
         {
-            xRoc /= yRoc;
-            yRoc = 1.0f;
+            while(yRoc > 1.0f)
+            {
+                xRoc *= 0.99f;
+                yRoc *= 0.99f;
+            }
         }
         else if (yRoc < 1.0f)
         {
-            while(yRoc < 1.0f)
+            while (yRoc < 1.0f)
             {
                 yRoc *= 1.1f;
                 xRoc *= 1.1f; // increment by 10% at a time
             }
         }
-        if(yRoc > 1.25)
+        if (yRoc > 1.25)
         {
             Debug.LogError("Y RATE OF CHANGE TOO HIGH: " + yRoc);
+        }
+    }
+
+    void normalizeX()
+    {
+        // normalize x rate of change to ~1
+        if (xRoc > 1.0f)
+        {
+            while(xRoc > 1.0f)
+            {
+                xRoc *= 0.99f;
+                yRoc *= 0.99f;
+            }
+            
+        } else {
+            while (xRoc < 1.0f)
+            {
+                yRoc *= 1.01f;
+                xRoc *= 1.01f; // increment by 1% at a time
+            }
+        }
+        if (xRoc > 1.25)
+        {
+            Debug.LogError("X RATE OF CHANGE TOO HIGH: " + xRoc);
         }
     }
 
