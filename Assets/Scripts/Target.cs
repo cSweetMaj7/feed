@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class Target : MonoBehaviour
+public class Target : Barrier
 {
     // Start is called before the first frame update
     void Start()
@@ -14,5 +14,10 @@ public class Target : MonoBehaviour
     void Update()
     {
         
+    }
+
+    override public BarrierType getBarrierType()
+    {
+        return Barrier.BarrierType.Target;
     }
 }

@@ -19,7 +19,7 @@ public class Ball : MonoBehaviour
     int framePass = 1;
     SpriteRenderer sprite;
     Vector2 lastCalculatedPoint;
-    GameObject hitTarget = null;
+    GameObject hitBarrier;
 
     // Start is called before the first frame update
     void Start()
@@ -74,9 +74,14 @@ public class Ball : MonoBehaviour
             }
 
             // place at new calculated position
-            //transform.position = new Vector3(caculatedPosition.x, caculatedPosition.y, transform.position.z);
             lastCalculatedPoint = new Vector3(caculatedPosition.x, caculatedPosition.y, transform.position.z);
-            Destroy(hitTarget);
+
+            if(hitBarrier)
+            {
+                // handle special events for hitting objects
+                CollisionHandler.HandleCollision(hitBarrier);
+                hitBarrier = null;
+            }
         }
         framePass = 1;
     }
@@ -96,9 +101,7 @@ public class Ball : MonoBehaviour
         endX.x = xDir ? endX.x + distance : endX.x - distance;
         endY.y = yDir ? endY.y + distance : endY.y - distance;
 
-        //Debug.DrawRay(originX, vecDirX, Color.green);
         Debug.DrawLine(originX, endX, Color.green);
-        //Debug.DrawRay(originY, vecDirY, Color.green);
         Debug.DrawLine(originY, endY, Color.green);
     }
 
@@ -109,13 +112,9 @@ public class Ball : MonoBehaviour
         // move ball in direction by rate of change
         nextCalculatedPoint.x = xDir ? origin.x + (xRoc * v) : origin.x - (xRoc * v);
         nextCalculatedPoint.y = yDir ? origin.y + (yRoc * v) : origin.y - (yRoc * v);
-        //Vector2 dest = new Vector2(newX, newY);
 
-        float xDif = (xRoc * v) - xLess; // Mathf.Abs(result.x - origin.x) - xLess;
-        float yDif = (yRoc * v) - yLess; // Mathf.Abs(result.y - origin.y) - yLess;
-
-        //drawDebugRays(result, xDif);
-        //drawDebugRays(result, yDif);
+        float xDif = (xRoc * v) - xLess;
+        float yDif = (yRoc * v) - yLess;
 
         if (xDif < Mathf.Epsilon || yDif < Mathf.Epsilon)
         {
@@ -168,8 +167,8 @@ public class Ball : MonoBehaviour
             yDir = !yDir;
             xDir = !xDir;
 
-            hitTarget = verticalHitCheck.collider.gameObject.name == "Target" ? verticalHitCheck.collider.gameObject : null;
-            hitTarget = horizontalHitCheck.collider.gameObject.name == "Target" ? horizontalHitCheck.collider.gameObject : null;
+            hitBarrier = verticalHitCheck.collider.gameObject;
+            hitBarrier = hitBarrier ? hitBarrier : horizontalHitCheck.collider.gameObject;
 
             nextCalculatedPoint = reflectY(verticalHitCheck.point, nextCalculatedPoint, true);
             //result = reflectX(horizontalHitCheck.point, result);
@@ -180,7 +179,7 @@ public class Ball : MonoBehaviour
             // invert y
             yDir = !yDir;
 
-            hitTarget = verticalHitCheck.collider.gameObject.name == "Target" ? verticalHitCheck.collider.gameObject : null;
+            hitBarrier = verticalHitCheck.collider.gameObject;
 
             nextCalculatedPoint = reflectY(verticalHitCheck.point, nextCalculatedPoint);
         }
@@ -190,7 +189,7 @@ public class Ball : MonoBehaviour
             // invert x
             xDir = !xDir;
 
-            hitTarget = horizontalHitCheck.collider.gameObject.name == "Target" ? horizontalHitCheck.collider.gameObject : null;
+            hitBarrier = horizontalHitCheck.collider.gameObject;
 
             nextCalculatedPoint = reflectX(horizontalHitCheck.point, nextCalculatedPoint);
         }

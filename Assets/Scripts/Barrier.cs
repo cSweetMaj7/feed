@@ -4,6 +4,11 @@ using UnityEngine;
 
 public class Barrier : MonoBehaviour
 {
+    public enum BarrierType {
+        Barrier,
+        Target
+    }
+
     // Start is called before the first frame update
     void Start()
     {
@@ -14,5 +19,10 @@ public class Barrier : MonoBehaviour
     void Update()
     {
         
+    }
+
+    virtual public BarrierType getBarrierType()
+    {
+        return BarrierType.Barrier;
     }
 }
