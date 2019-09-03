@@ -33,10 +33,10 @@ public class Ball : MonoBehaviour
 
         // setup ball resource to just be 1 of everything for now
         ballResources = new GameResource();
-        ballResources.SetResourceQuantity(GameResource.ResourceType.Cheese, 2);
-        ballResources.SetResourceQuantity(GameResource.ResourceType.Pepperoni, 10);
+        ballResources.SetResourceQuantity(GameResource.ResourceType.Cheese, 1);
+        ballResources.SetResourceQuantity(GameResource.ResourceType.Pepperoni, 1);
         ballResources.SetResourceQuantity(GameResource.ResourceType.Canadian_Bacon, 1);
-        ballResources.SetResourceQuantity(GameResource.ResourceType.Pineapple, 5);
+        ballResources.SetResourceQuantity(GameResource.ResourceType.Pineapple, 1);
 
         // launch();
     }

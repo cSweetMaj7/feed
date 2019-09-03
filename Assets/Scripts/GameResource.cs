@@ -9,7 +9,8 @@ public class GameResource
         Cheese,
         Pepperoni,
         Canadian_Bacon,
-        Pineapple
+        Pineapple,
+        None
     }
 
     private Dictionary<ResourceType,int> resources = new Dictionary<ResourceType,int>();

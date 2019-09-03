@@ -11,7 +11,7 @@ public class Barrier : MonoBehaviour
     }
 
     // Start is called before the first frame update
-    void Start()
+    virtual public void Start()
     {
         
     }
