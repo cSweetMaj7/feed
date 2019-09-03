@@ -30,8 +30,7 @@ public class GameResource
         if(resources.ContainsKey(resourceType))
         {
             result = resources[resourceType];
-        } else
-        {
+        } else {
             // init queried resources that don't exist to zero for double safety
             SetResourceQuantity(resourceType, 0);
         }
@@ -44,8 +43,7 @@ public class GameResource
         if(resources.ContainsKey(resourceType))
         {
             resources[resourceType] = quantity;
-        } else
-        {
+        } else {
             resources.Add(resourceType, quantity);
         }
     }
@@ -62,7 +60,7 @@ public class GameResource
             // subtracting, if we reach zero then give back any remaining resources
             resourceRemainder = quantity;
             int curResourceVal = GetResourceQuantity(resourceType);
-            while(curResourceVal > 0)
+            while(curResourceVal > 0 && resourceRemainder > 0)
             {
                 resourceRemainder--;
                 SetResourceQuantity(resourceType, --curResourceVal);

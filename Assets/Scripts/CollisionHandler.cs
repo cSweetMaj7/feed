@@ -4,7 +4,7 @@ using static Barrier;
 
 public static class CollisionHandler
 {
-    public static void HandleCollision(GameObject hitObject)
+    public static void HandleCollision(GameObject hitObject, Ball ball)
     {
         Barrier barrierHit = hitObject.GetComponentInParent<Barrier>();
         BarrierType typeHit = barrierHit.getBarrierType();
@@ -12,8 +12,13 @@ public static class CollisionHandler
         // handling for Targets
         if(typeHit == BarrierType.Target)
         {
-            // for now just destroy what was hit
-            GameObject.Destroy(hitObject);
+            
+            Target hitTarget = barrierHit as Target;
+            hitTarget.deductResources(ball.getBallResources());
+            if(hitTarget.breakResources.allResourceSum() < 1)
+            {
+                GameObject.Destroy(hitObject);
+            }
         }
 
         // handling for simple Barriers

@@ -20,6 +20,7 @@ public class Ball : MonoBehaviour
     SpriteRenderer sprite;
     Vector2 lastCalculatedPoint;
     GameObject hitBarrier;
+    GameResource ballResources;
 
     // Start is called before the first frame update
     void Start()
@@ -28,7 +29,20 @@ public class Ball : MonoBehaviour
         lastOffsetWidth = sprite.size.x;
         circleOffset = lastOffsetWidth / 2;
         lastCalculatedPoint = transform.position;
+
+        // setup ball resource to just be 1 of everything for now
+        ballResources = new GameResource();
+        ballResources.SetResourceQuantity(GameResource.ResourceType.Cheese, 2);
+        ballResources.SetResourceQuantity(GameResource.ResourceType.Pepperoni, 10);
+        ballResources.SetResourceQuantity(GameResource.ResourceType.Canadian_Bacon, 1);
+        ballResources.SetResourceQuantity(GameResource.ResourceType.Pineapple, 5);
+
         launch();
+    }
+
+    public GameResource getBallResources()
+    {
+        return ballResources;
     }
 
     // Update is called once per frame
@@ -79,7 +93,7 @@ public class Ball : MonoBehaviour
             if(hitBarrier)
             {
                 // handle special events for hitting objects
-                CollisionHandler.HandleCollision(hitBarrier);
+                CollisionHandler.HandleCollision(hitBarrier, this);
                 hitBarrier = null;
             }
         }
