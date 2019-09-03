@@ -6,12 +6,25 @@ public class GameManager : MonoBehaviour
 {
     public Camera mainCamera;
     public Ball[] ballList;
-    public GameObject targetField;
     public GameObject aimReticle;
     public GameObject shotLine;
+    public TargetField targetField;
 
     private List<Target> targetList;
-    bool launched = false;
+    GameState gameState = GameState.Aim; // starts off in aim state
+
+    public enum GameState
+    {
+        Aim,
+        Action,
+        End,
+        Pause
+    }
+
+    public void SetGameState(GameState gameStateIn)
+    {
+        gameState = gameStateIn;
+    }
 
     // Start is called before the first frame update
     void Start()
@@ -19,21 +32,26 @@ public class GameManager : MonoBehaviour
         aimReticle.SetActive(false);
     }
 
-    public void setLaunched(bool itIs)
-    {
-        launched = itIs;
-    }
-
     // Update is called once per frame
     void Update()
     {
-        if (Input.GetMouseButtonDown(0))
+        // check for game enders
+        if(targetField.targetsRemaining() < 1)
+        {
+            gameState = GameState.End;
+        }
+
+        if(gameState == GameState.End)
+        {
+            endGame();
+        }
+        else if (Input.GetMouseButtonDown(0) && gameState == GameState.Aim)
         {
             Vector2 mousePosition = Camera.main.ScreenToWorldPoint(Input.mousePosition);
             Rigidbody2D ballCollider = ballList[0].GetComponent<Rigidbody2D>();
             bool aimed = true;
 
-            if (ballCollider.OverlapPoint(mousePosition) && !launched)
+            if (ballCollider.OverlapPoint(mousePosition))
             {
                 //do great stuff
                 Debug.Log("Launched");
@@ -43,8 +61,8 @@ public class GameManager : MonoBehaviour
 
                 aimReticle.SetActive(false);
                 ballList[0].launch();
+                SetGameState(GameState.Action);
                 aimed = false;
-                launched = true;
             }
 
             // set ball's target slope based on input point
@@ -57,5 +75,10 @@ public class GameManager : MonoBehaviour
                 
             }
         }
+    }
+
+    void endGame()
+    {
+        // dialog, scores, ratings get called here
     }
 }

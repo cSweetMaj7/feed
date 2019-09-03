@@ -22,7 +22,7 @@ public class ShotLine : Barrier
     {
         launchPoint = input;
         GameManager gameManager = GetComponentInParent<GameManager>();
-        gameManager.setLaunched(false);
+        gameManager.SetGameState(GameManager.GameState.Aim);
     }
 
     public bool isLaunchPointSet()

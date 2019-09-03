@@ -20,7 +20,7 @@ public static class CollisionHandler
             hitTarget.deductResources(ball.getBallResources());
             if(hitTarget.breakResources.allResourceSum() < 1)
             {
-                GameObject.Destroy(hitObject);
+                GameObject.Destroy(hitObject.GetComponentInParent<Target>().gameObject);
             }
         }
 
