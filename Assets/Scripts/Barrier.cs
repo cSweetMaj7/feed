@@ -6,7 +6,8 @@ public class Barrier : MonoBehaviour
 {
     public enum BarrierType {
         Barrier,
-        Target
+        Target,
+        ShotLine
     }
 
     // Start is called before the first frame update

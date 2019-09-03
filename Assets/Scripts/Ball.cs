@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+using UnityEngine.EventSystems;
 
 public class Ball : MonoBehaviour
 {
@@ -37,7 +38,12 @@ public class Ball : MonoBehaviour
         ballResources.SetResourceQuantity(GameResource.ResourceType.Canadian_Bacon, 1);
         ballResources.SetResourceQuantity(GameResource.ResourceType.Pineapple, 5);
 
-        launch();
+        // launch();
+    }
+
+    void OnMouseDown()
+    {
+        Debug.Log("Clicked");
     }
 
     public GameResource getBallResources()
@@ -249,10 +255,9 @@ public class Ball : MonoBehaviour
         return calcNextReflect ? calculatNextPoint(currentPoint, xTraveled, 0f) : currentPoint;
     }
 
-    void launch() // launching from bottom of screen
+    public void launch()
     {
-        xDir = true;
-        yDir = true;
+        yDir = true; // always launching from bottom of screen
 
         setRoc();
         
@@ -322,6 +327,24 @@ public class Ball : MonoBehaviour
         {
             Debug.LogError("X RATE OF CHANGE TOO HIGH: " + xRoc);
         }
+    }
+
+    public void setSlopeByInputPoint(Vector2 inputPoint)
+    {
+        float x = Mathf.Abs(transform.position.x - inputPoint.x);
+        float y = Mathf.Abs(transform.position.y - inputPoint.y);
+
+        m = y/x;
+        setRoc();
+
+        // set x polarity
+        xDir = inputPoint.x > transform.position.x;
+    }
+
+    public void setLock(bool itIs)
+    {
+        locked = itIs;
+        lastCalculatedPoint = transform.position;
     }
 
 
