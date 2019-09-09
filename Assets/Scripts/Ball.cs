@@ -3,7 +3,7 @@ using UnityEngine.EventSystems;
 
 public class Ball : MonoBehaviour
 {
-    bool locked = true; // locks ball movement, set false to launch
+    public bool locked = true; // locks ball movement, set false to launch
     public bool xDir; // false = left, true = right
     public bool yDir; // false = down, true, up
     public float m = 1.0f; // slope
@@ -22,23 +22,48 @@ public class Ball : MonoBehaviour
     Vector2 lastCalculatedPoint;
     GameObject hitBarrier;
     GameResource ballResources;
+    Vector2 splitPoint;
+    public bool reflectedY;
+    CircleCollider2D circleCollider;
+    public GameManager gameManager;
+    public bool shouldSplit;
 
     // Start is called before the first frame update
     void Start()
     {
-        sprite = GetComponent<SpriteRenderer>();
+        init();
+
+        // launch();
+    }
+
+    public void init(Ball sourceBall = null, bool reflectY = true)
+    {
+        setComponents();
         lastOffsetWidth = sprite.size.x;
         circleOffset = lastOffsetWidth / 2;
         lastCalculatedPoint = transform.position;
 
-        // setup ball resource to just be 1 of everything for now
-        ballResources = new GameResource();
-        ballResources.SetResourceQuantity(GameResource.ResourceType.Cheese, 1);
-        ballResources.SetResourceQuantity(GameResource.ResourceType.Pepperoni, 1);
-        ballResources.SetResourceQuantity(GameResource.ResourceType.Canadian_Bacon, 1);
-        ballResources.SetResourceQuantity(GameResource.ResourceType.Pineapple, 1);
+        setResources(1, 1, 1, 1);  //default, take from UI at some point
+    }
 
-        // launch();
+    public void setResources(int to)
+    {
+        setResources(to, to, to, to);
+    }
+
+    public void setComponents()
+    {
+        sprite = GetComponent<SpriteRenderer>();
+        circleCollider = GetComponent<CircleCollider2D>();
+    }
+
+    public void setResources(int cheeseIn, int pepperoniIn, int canadianBaconIn, int pineappleIn)
+    {
+        ballResources = new GameResource();
+        ballResources.SetResourceQuantity(GameResource.ResourceType.Cheese, cheeseIn);
+        ballResources.SetResourceQuantity(GameResource.ResourceType.Pepperoni, pepperoniIn);
+        ballResources.SetResourceQuantity(GameResource.ResourceType.Canadian_Bacon, canadianBaconIn);
+        ballResources.SetResourceQuantity(GameResource.ResourceType.Pineapple, pineappleIn);
     }
 
     void OnMouseDown()
@@ -133,6 +158,8 @@ public class Ball : MonoBehaviour
         nextCalculatedPoint.x = xDir ? origin.x + (xRoc * v) : origin.x - (xRoc * v);
         nextCalculatedPoint.y = yDir ? origin.y + (yRoc * v) : origin.y - (yRoc * v);
 
+        splitPoint = nextCalculatedPoint;
+
         float xDif = (xRoc * v) - xLess;
         float yDif = (yRoc * v) - yLess;
 
@@ -182,7 +209,7 @@ public class Ball : MonoBehaviour
         RaycastHit2D verticalHitCheck = Physics2D.Raycast(originY, vecDirY, yDif); // v collider
 
         // this is where collision logic starts happening
-        if(verticalHitCheck.collider && horizontalHitCheck.collider)
+        if(validateCollider(verticalHitCheck.collider) && horizontalHitCheck.collider)
         {
             yDir = !yDir;
             xDir = !xDir;
@@ -193,7 +220,7 @@ public class Ball : MonoBehaviour
             nextCalculatedPoint = reflectY(verticalHitCheck.point, nextCalculatedPoint, true);
             //result = reflectX(horizontalHitCheck.point, result);
         }
-        else if (verticalHitCheck.collider)
+        else if (validateCollider(verticalHitCheck.collider))
         {
             //Debug.Log("Y Collide");
             // invert y
@@ -203,7 +230,7 @@ public class Ball : MonoBehaviour
 
             nextCalculatedPoint = reflectY(verticalHitCheck.point, nextCalculatedPoint);
         }
-        else if (horizontalHitCheck.collider)
+        else if (validateCollider(horizontalHitCheck.collider))
         {
             //Debug.Log("X Collide");
             // invert x
@@ -217,8 +244,22 @@ public class Ball : MonoBehaviour
         return nextCalculatedPoint;
     }
 
+    private bool validateCollider(Collider2D colliderIn)
+    {
+        bool result = true;
+
+        if(!colliderIn || colliderIn is CircleCollider2D)
+        {
+            result = false;
+        }
+
+        return result;
+    }
+
     Vector2 reflectY(Vector2 hitPoint, Vector2 currentPoint, bool twoHit = false, bool calcNextReflect = false)
     {
+        gameManager.reflected();
+        reflectedY = true;
         float yTraveled = Mathf.Abs(currentPoint.y - hitPoint.y) - circleOffset;
         float currYRoc = yRoc * v;
         float reflectDistance = Mathf.Abs(currYRoc - yTraveled);
@@ -238,6 +279,8 @@ public class Ball : MonoBehaviour
 
     Vector2 reflectX(Vector2 hitPoint, Vector2 currentPoint, bool twoHit = false, bool calcNextReflect = false)
     {
+        gameManager.reflected();
+        reflectedY = false;
         float xTraveled = Mathf.Abs(currentPoint.x - hitPoint.x) - circleOffset ;
         float currXRoc = xRoc * v;
         float reflectDistance = Mathf.Abs(currXRoc - xTraveled);
@@ -255,8 +298,14 @@ public class Ball : MonoBehaviour
         return calcNextReflect ? calculatNextPoint(currentPoint, xTraveled, 0f) : currentPoint;
     }
 
+    public void setCircleCollider(bool itIs)
+    {
+        circleCollider.enabled = itIs;
+    }
+
     public void launch()
     {
+        //setCircleCollider(false);
         yDir = true; // always launching from bottom of screen
 
         setRoc();
@@ -274,10 +323,33 @@ public class Ball : MonoBehaviour
         // results in smallest y rate of change
         yRoc = Mathf.Abs(m * xRoc);
 
-        normalizeX();
-        normalizeY();
+        //normalizeX();
+        //normalizeY();
+        normalizeRoc();
 
         Debug.Log("setRoc calc: xRoc-" + xRoc + " yRoc-" + yRoc);
+    }
+
+    void normalizeRoc()
+    {
+        while(xRoc > 1.0f || yRoc > 1.0f)
+        {
+            xRoc *= .99f;
+            yRoc *= .99f;
+        }
+
+        // also check really small values
+        while(xRoc < 1.0f || yRoc < 1.0f)
+        {
+            xRoc *= 1.01f;
+            yRoc *= 1.01f;
+        }
+
+        while (xRoc > 1.0f || yRoc > 1.0f)
+        {
+            xRoc *= .99f;
+            yRoc *= .99f;
+        }       
     }
 
     void normalizeY()
@@ -345,6 +417,11 @@ public class Ball : MonoBehaviour
     {
         locked = itIs;
         lastCalculatedPoint = transform.position;
+    }
+
+    public bool getLock()
+    {
+        return locked;
     }
 
 

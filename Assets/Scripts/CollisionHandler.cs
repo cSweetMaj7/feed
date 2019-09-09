@@ -6,6 +6,7 @@ public static class CollisionHandler
 {
     public static void HandleCollision(GameObject hitObject, Ball ball)
     {
+        GameManager gameManager = hitObject.GetComponentInParent<GameManager>();
         Barrier barrierHit = hitObject.GetComponent<Barrier>();
         if(!barrierHit)
         {
@@ -21,18 +22,43 @@ public static class CollisionHandler
             if(hitTarget.breakResources.allResourceSum() < 1)
             {
                 GameObject.Destroy(hitObject.GetComponentInParent<Target>().gameObject);
+                
+                if (gameManager.getPowerLevel() >= gameManager.powerMax) // split the ball
+                {
+                    GameObject splitBall = GameObject.Instantiate(ball.gameObject);
+                    splitBall.gameObject.transform.parent = gameManager.gameObject.transform;
+                    Ball newBall = splitBall.GetComponent<Ball>();
+                    
+                    int powerLevel = gameManager.getPowerLevel();
+                    newBall.setResources(powerLevel, powerLevel, powerLevel, powerLevel);
+                    newBall.setComponents();
+                    if (newBall.reflectedY)
+                    {
+                        newBall.yDir = !newBall.yDir;
+                    }
+                    else
+                    {
+                        newBall.xDir = !newBall.xDir;
+                    }
+                    newBall.setComponents();
+                    newBall.setCircleCollider(false);
+                    newBall.launch();
+                    // clear all circle colliders once we start splitting
+                    gameManager.clearCircleColliders();
+                }
             }
         }
 
-        if(typeHit == BarrierType.ShotLine)
+        ShotLine shotLine = barrierHit as ShotLine;
+        if (typeHit == BarrierType.ShotLine)
         {
             // see if this is the first ball back
-            ShotLine shotLine = barrierHit as ShotLine;
             if(!shotLine.isLaunchPointSet())
             {
                 ball.setLock(true);
                 ball.transform.position = new Vector2(ball.transform.position.x, -4.61f);
-                shotLine.updateLaunchPoint(ball.transform.position);
+                shotLine.updateLaunchPoint(ball.transform.position, ball.gameObject);
+                
             } else {
                 // destroy this extra ball
                 GameObject.Destroy(ball.gameObject);
@@ -40,7 +66,7 @@ public static class CollisionHandler
         }
 
         // handling for simple Barriers
-        if(typeHit == BarrierType.Barrier)
+        if (typeHit == BarrierType.Barrier)
         {
 
         }

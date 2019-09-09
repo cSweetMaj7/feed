@@ -4,6 +4,7 @@ using System.Collections;
 public class ShotLine : Barrier
 {
     Vector2 launchPoint;
+    public GameObject launchBall;
     bool launchPointSet = false;
     // Use this for initialization
     void Start()
@@ -18,11 +19,13 @@ public class ShotLine : Barrier
         launchPointSet = false;
     }
 
-    public void updateLaunchPoint(Vector2 input)
+    public void updateLaunchPoint(Vector2 input, GameObject ball)
     {
         launchPoint = input;
+        launchBall = ball;
         GameManager gameManager = GetComponentInParent<GameManager>();
-        gameManager.SetGameState(GameManager.GameState.Aim);
+        //gameManager.SetGameState(GameManager.GameState.Aim);
+        launchPointSet = true;
     }
 
     public bool isLaunchPointSet()
