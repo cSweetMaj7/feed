@@ -17,21 +17,25 @@ public static class CollisionHandler
         // handling for Targets
         if(typeHit == BarrierType.Target)
         {
+            //gameManager.soundManager.playBallBounceBarrier();
             Target hitTarget = barrierHit as Target;
             hitTarget.deductResources(ball.getBallResources());
             if(hitTarget.breakResources.allResourceSum() < 1)
             {
                 GameObject.Destroy(hitObject.GetComponentInParent<Target>().gameObject);
+                gameManager.soundManager.playTargetDestroyed();
                 
                 if (gameManager.getPowerLevel() >= gameManager.powerMax) // split the ball
                 {
                     GameObject splitBall = GameObject.Instantiate(ball.gameObject);
                     splitBall.gameObject.transform.parent = gameManager.gameObject.transform;
                     Ball newBall = splitBall.GetComponent<Ball>();
-                    
+
                     int powerLevel = gameManager.getPowerLevel();
                     newBall.setResources(powerLevel, powerLevel, powerLevel, powerLevel);
                     newBall.setComponents();
+                    // make the split ball smaller than the original
+                    newBall.setHalfBallSize();
                     if (newBall.reflectedY)
                     {
                         newBall.yDir = !newBall.yDir;
@@ -68,7 +72,7 @@ public static class CollisionHandler
         // handling for simple Barriers
         if (typeHit == BarrierType.Barrier)
         {
-
+            // gameManager.soundManager.playBallBounceBarrier();
         }
     }
 }

@@ -6,6 +6,7 @@ public class TargetField : MonoBehaviour
 {
     public Target[] targetList;
     public GameObject advanceLimiter;
+    public float yFailLimit = 100.0f;
 
     bool fieldAdvancing;
 
@@ -35,7 +36,7 @@ public class TargetField : MonoBehaviour
             }
 
             // check if game ends
-            if(getLowestTargetY() <= 200f)
+            if(getLowestTargetY() <= yFailLimit)
             {
                 fieldAdvancing = false;
                 GetComponentInParent<GameManager>().fail();
@@ -84,5 +85,6 @@ public class TargetField : MonoBehaviour
     {
         startPos = transform.position;
         fieldAdvancing = true;
+        GetComponentInParent<GameManager>().soundManager.playStageAdvance();
     }
 }

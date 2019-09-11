@@ -23,7 +23,9 @@ public class ShotLine : Barrier
     {
         launchPoint = input;
         launchBall = ball;
-        GameManager gameManager = GetComponentInParent<GameManager>();
+        //GameManager gameManager = GetComponentInParent<GameManager>();
+        // set the ball back to default size in case it was shrunk
+        ball.GetComponent<Ball>().setBallSize();
         //gameManager.SetGameState(GameManager.GameState.Aim);
         launchPointSet = true;
     }

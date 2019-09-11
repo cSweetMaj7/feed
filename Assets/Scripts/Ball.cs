@@ -8,7 +8,7 @@ public class Ball : MonoBehaviour
     public bool yDir; // false = down, true, up
     public float m = 1.0f; // slope
     public float v = 1.0f; // velocity
-    float circleOffset = 0.55f;
+    float circleOffset;
     float lastOffsetWidth;
     float xRoc;
     float yRoc;
@@ -27,6 +27,9 @@ public class Ball : MonoBehaviour
     CircleCollider2D circleCollider;
     public GameManager gameManager;
     public bool shouldSplit;
+    public bool isLaunchBall;
+
+    public float defaultBallSize = 0.75f;
 
     // Start is called before the first frame update
     void Start()
@@ -34,6 +37,23 @@ public class Ball : MonoBehaviour
         init();
 
         // launch();
+    }
+
+    public void setBallSize(float size = 0)
+    {
+        if(System.Math.Abs(size) < Mathf.Epsilon)
+        {
+            // sets default
+            sprite.size = new Vector2(defaultBallSize, defaultBallSize);
+        } else
+        {
+            sprite.size = new Vector2(size, size);
+        }
+    }
+
+    public void setHalfBallSize()
+    {
+        sprite.size = new Vector2(defaultBallSize / 2, defaultBallSize / 2);
     }
 
     public void init(Ball sourceBall = null, bool reflectY = true)

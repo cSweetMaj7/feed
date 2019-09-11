@@ -10,6 +10,7 @@ public class GameManager : MonoBehaviour
     public GameObject shotLine;
     public TargetField targetField;
     public TextMeshProUGUI powerText;
+    public SoundManager soundManager;
 
     public TextMeshProUGUI dialogHeaderText;
     public TextMeshProUGUI dialogBodyText;
@@ -31,6 +32,8 @@ public class GameManager : MonoBehaviour
 
     private bool gameEnded;
     private bool failed;
+    private int frozeActionFrames;
+    private int freezeActionFrames;
 
     public Canvas UICanvas;
 
@@ -58,6 +61,7 @@ public class GameManager : MonoBehaviour
     {
         updatePowerLevel(1, true);
         aimReticle.SetActive(false);
+        soundManager.startMusicSlow();
     }
 
     Ball getTargetBall()
@@ -67,15 +71,16 @@ public class GameManager : MonoBehaviour
 
     void updatePowerLevel(int amount, bool add)
     {
-        if(add && powerLevel < powerMax)
+        if (add && powerLevel < powerMax)
         {
+            soundManager.playBallTap();
             powerLevel += amount;
         } else if (!add && powerLevel > 0)
         {
             powerLevel -= amount;
         }
 
-        if(powerLevel > powerMax)
+        if (powerLevel > powerMax)
         {
             powerLevel = powerMax;
         } else if (powerLevel < 1)
@@ -87,6 +92,12 @@ public class GameManager : MonoBehaviour
 
         // also increase velocity
         getTargetBall().v += advanceVelocity;
+
+        // set the music once we get to max power
+        if(powerLevel == powerMax)
+        {
+            SoundManager.Instance.startMusicFast();
+        }
     }
 
     public int getPowerLevel()
@@ -99,19 +110,24 @@ public class GameManager : MonoBehaviour
     {
         sinceReflect += Time.deltaTime;
         sinceTap += Time.deltaTime;
+        if(frozeActionFrames > 0)
+        {
+            frozeActionFrames++;
+            unfreezeAction();
+        }
 
-        if(awaitingReflect && (sinceTap > timingWindow))
+        if (awaitingReflect && (sinceTap > timingWindow))
         {
             awaitingReflect = false; // "miss early"
         }
 
         // check for game enders
-        if(targetField.targetsRemaining() < 1)
+        if (targetField.targetsRemaining() < 1)
         {
             gameState = GameState.End;
         }
 
-        if(gameState == GameState.End && !gameEnded)
+        if (gameState == GameState.End && !gameEnded)
         {
             gameEnded = true;
             endGame();
@@ -122,7 +138,7 @@ public class GameManager : MonoBehaviour
 
         if (Input.GetMouseButtonDown(0))
         {
-            if(gameState == GameState.Aim)
+            if (gameState == GameState.Aim)
             {
                 bool aimed = true;
 
@@ -163,12 +179,12 @@ public class GameManager : MonoBehaviour
             }
         }
 
-        if(gameState == GameState.Action && getBallsInPlay() == 0)
+        if (gameState == GameState.Action && getBallsInPlay() == 0)
         {
             targetField.advanceField();
             SetGameState(GameState.Aim);
         }
-        
+
     }
 
     public void fail()
@@ -180,7 +196,7 @@ public class GameManager : MonoBehaviour
     public void checkActionBallTap()
     {
         // if the ball reflects off a target within the next delta seconds or has within the last delta seconds
-        if(sinceReflect < timingWindow)
+        if (sinceReflect < timingWindow)
         {
             // hit
             updatePowerLevel(1, true);
@@ -220,7 +236,7 @@ public class GameManager : MonoBehaviour
     void endGame()
     {
         // dialog, scores, ratings get called here
-        if(gameEnded)
+        if (gameEnded)
         {
             string header = failed ? "Failure..." : "Victory!";
             string body = failed ? "You can't win em' all and you didn't win this one. Better luck next time." : "The victor writes the history book and this time it's YOU! Get writing, Victor!";
@@ -228,6 +244,7 @@ public class GameManager : MonoBehaviour
             string right = "Next";
 
             showEndGameDialog(header, body, left, right);
+            SoundManager.Instance.startEndMusic();
         }
     }
 
@@ -244,17 +261,33 @@ public class GameManager : MonoBehaviour
     public int getBallsInPlay()
     {
         int result = 0;
-        Ball[] balls =  GetComponentsInChildren<Ball>();
-        for(int i = 0; i < balls.Length; i++)
+        Ball[] balls = GetComponentsInChildren<Ball>();
+        for (int i = 0; i < balls.Length; i++)
         {
             result++;
         }
 
-        if(shotLine.GetComponent<ShotLine>().isLaunchPointSet())
+        if (shotLine.GetComponent<ShotLine>().isLaunchPointSet())
         {
             result--;
         }
 
         return result;
+    }
+
+    // locks the position of all balls on the field
+    // 
+    public void freezeAction(int frames)
+    {
+        freezeActionFrames = frames;
+        frozeActionFrames = 1;
+    }
+
+    void unfreezeAction()
+    {
+        if(frozeActionFrames >= freezeActionFrames)
+        {
+            // unfreeze
+        }
     }
 }

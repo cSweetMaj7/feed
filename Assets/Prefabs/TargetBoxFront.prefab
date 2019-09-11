@@ -1995,7 +1995,7 @@ Transform:
   m_GameObject: {fileID: 8903879376229673921}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 2, y: 2, z: 1}
+  m_LocalScale: {x: 1.55, y: 1.55, z: 1}
   m_Children:
   - {fileID: 8903879375461449109}
   m_Father: {fileID: 0}
@@ -2013,16 +2013,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7228a37f9e536441fb64712e24ce43ba, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  cheese: 10
-  pepperoni: 2
-  canadianBacon: 1
+  cheese: 5
+  pepperoni: 0
+  canadianBacon: 0
   pineapple: 0
   slot0Text: {fileID: 7232071198614045725}
   slot1Text: {fileID: 256166207234053317}
   slot2Text: {fileID: 8859688444948748407}
-  slot0ResourceType: 0
-  slot1ResourceType: 1
-  slot2ResourceType: 2
+  slot0ResourceType: 4
+  slot1ResourceType: 0
+  slot2ResourceType: 4
   slot0: {fileID: 7232071198150128872}
   slot1: {fileID: 869390948362171271}
   slot2: {fileID: 518260566201070569}
