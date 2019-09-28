@@ -22,7 +22,8 @@ public class Ball : MonoBehaviour
     Vector2 lastCalculatedPoint;
     GameObject hitBarrier;
     GameResource ballResources;
-    Vector2 splitPoint;
+    //Vector2 splitPoint;
+    
     public bool reflectedY;
     CircleCollider2D circleCollider;
     public GameManager gameManager;
@@ -178,7 +179,7 @@ public class Ball : MonoBehaviour
         nextCalculatedPoint.x = xDir ? origin.x + (xRoc * v) : origin.x - (xRoc * v);
         nextCalculatedPoint.y = yDir ? origin.y + (yRoc * v) : origin.y - (yRoc * v);
 
-        splitPoint = nextCalculatedPoint;
+        //splitPoint = nextCalculatedPoint;
 
         float xDif = (xRoc * v) - xLess;
         float yDif = (yRoc * v) - yLess;

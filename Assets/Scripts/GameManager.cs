@@ -11,14 +11,18 @@ public class GameManager : MonoBehaviour
     public TargetField targetField;
     public TextMeshProUGUI powerText;
     public SoundManager soundManager;
+    public GameObject background;
 
     public TextMeshProUGUI dialogHeaderText;
     public TextMeshProUGUI dialogBodyText;
     public TextMeshProUGUI dialogLeftButtonText;
     public TextMeshProUGUI dialogRightButtonText;
 
-    private int powerLevel = 0;
+    private int powerLevel;
     public int powerMax = 2;
+	private bool reachedMax;
+	private float sinceLevelLowered;
+	public float lowerLevelThresholdSeconds = 3.0f;
 
     private bool awaitingReflect;
     private float sinceReflect;
@@ -35,7 +39,18 @@ public class GameManager : MonoBehaviour
     private int frozeActionFrames;
     private int freezeActionFrames;
 
+    private Vector2 touchStartPos;
+    private Vector2 touchEndPos;
+    private bool aimed;
+    private bool startedMusic;
+
+    private bool bgBounced;
+
     public Canvas UICanvas;
+
+    public float backgroundBounceAmount = 0.25f;
+
+    private float sinceStart;
 
     public enum GameState
     {
@@ -61,8 +76,9 @@ public class GameManager : MonoBehaviour
     {
         updatePowerLevel(1, true);
         aimReticle.SetActive(false);
-        soundManager.startMusicSlow();
     }
+
+
 
     Ball getTargetBall()
     {
@@ -80,9 +96,11 @@ public class GameManager : MonoBehaviour
             powerLevel -= amount;
         }
 
-        if (powerLevel > powerMax)
+        if (powerLevel >= powerMax)
         {
             powerLevel = powerMax;
+			sinceLevelLowered = 0;
+			reachedMax = true;
         } else if (powerLevel < 1)
         {
             powerLevel = 1;
@@ -108,6 +126,16 @@ public class GameManager : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        sinceStart += Time.deltaTime;
+        // delay starting music to avoid weird load issues with beat tracking
+        if(sinceStart > 1.0f && !startedMusic)
+        {
+            soundManager.startMusicSlow();
+            startedMusic = true;
+        }
+
+		checkLowerPowerLevel();
+
         sinceReflect += Time.deltaTime;
         sinceTap += Time.deltaTime;
         if(frozeActionFrames > 0)
@@ -136,48 +164,138 @@ public class GameManager : MonoBehaviour
         Vector2 mousePosition = Camera.main.ScreenToWorldPoint(Input.mousePosition);
         Rigidbody2D ballCollider = getTargetBall().GetComponent<Rigidbody2D>();
 
-        if (Input.GetMouseButtonDown(0))
+		// instead of GetMouseButtonDown start looking at touches and figuring out what we need to do
+		// use mouse clicks when in eidtor. Otherwise fall back to touches, which is what will be used on-device
+
+		if (Input.GetMouseButtonDown(0))
+		{
+			if (gameState == GameState.Aim)
+			{
+				aimed = true;
+
+				if (ballCollider.OverlapPoint(mousePosition))
+				{
+					//do great stuff
+					Debug.Log("Launched");
+
+					ShotLine shotLineComponent = shotLine.GetComponent<ShotLine>();
+					shotLineComponent.clearLaunchPoint();
+
+					aimReticle.SetActive(false);
+					getTargetBall().launch();
+					SetGameState(GameState.Action);
+					aimed = false;
+				}
+
+				// set ball's target slope based on input point
+				if (aimed)
+				{
+					Debug.Log("Aimed");
+					// turn on circle collider to detect launch
+					getTargetBall().setCircleCollider(true);
+					aimReticle.transform.position = mousePosition;
+					aimReticle.SetActive(true);
+					getTargetBall().setSlopeByInputPoint(mousePosition);
+				}
+			}
+			else if (gameState == GameState.Action)
+			{
+				// clearCircleColliders();
+				// check if ball was tapped during action
+				if (ballCollider.OverlapPoint(mousePosition))
+				{
+					Debug.Log("Tapped Ball In Motion");
+					checkActionBallTap();
+				}
+			}
+		}
+
+        /*
+		if (Application.isEditor)
         {
-            if (gameState == GameState.Aim)
+            
+        } else
+        {
+            if (Input.touches.Length > 0)
             {
-                bool aimed = true;
-
-                if (ballCollider.OverlapPoint(mousePosition))
+                foreach (Touch touch in Input.touches)
                 {
-                    //do great stuff
-                    Debug.Log("Launched");
+                    if (touch.phase == TouchPhase.Began)
+                    {
+                        touchStartPos = touch.position;
+                    }
+                    else if (touch.phase == TouchPhase.Moved)
+                    {
+                        // moving...
+                    }
+                    else if (touch.phase == TouchPhase.Ended)
+                    {
 
-                    ShotLine shotLineComponent = shotLine.GetComponent<ShotLine>();
-                    shotLineComponent.clearLaunchPoint();
+                        touchEndPos = touch.position;
+                        // touch/swipe is over, figure out what it was and do it
+                        if (touchStartPos == touchEndPos)
+                        {
+                            // a tap, aim the ball
+                            aimed = true;
+                        }
+                        else if (touchStartPos.y < touchEndPos.y)
+                        {
+                            // swipe up, launch
+                            aimed = false;
+                        }
 
-                    aimReticle.SetActive(false);
-                    getTargetBall().launch();
-                    SetGameState(GameState.Action);
-                    aimed = false;
-                }
+                        // execution
+                        if (gameState == GameState.Aim)
+                        {
+                            if (ballCollider.OverlapPoint(mousePosition))
+                            {
+                                //do great stuff
+                                Debug.Log("Launched");
 
-                // set ball's target slope based on input point
-                if (aimed)
-                {
-                    Debug.Log("Aimed");
-                    // turn on circle collider to detect launch
-                    getTargetBall().setCircleCollider(true);
-                    aimReticle.transform.position = mousePosition;
-                    aimReticle.SetActive(true);
-                    getTargetBall().setSlopeByInputPoint(mousePosition);
-                }
-            }
-            else if (gameState == GameState.Action)
-            {
-                // clearCircleColliders();
-                // check if ball was tapped during action
-                if (ballCollider.OverlapPoint(mousePosition))
-                {
-                    Debug.Log("Tapped Ball In Motion");
-                    checkActionBallTap();
+                                ShotLine shotLineComponent = shotLine.GetComponent<ShotLine>();
+                                shotLineComponent.clearLaunchPoint();
+
+                                aimReticle.SetActive(false);
+                                getTargetBall().launch();
+                                SetGameState(GameState.Action);
+                                aimed = false;
+                            }
+
+                            // set ball's target slope based on input point
+                            if (aimed)
+                            {
+                                Debug.Log("Aimed");
+                                // turn on circle collider to detect launch
+                                getTargetBall().setCircleCollider(true);
+                                aimReticle.transform.position = mousePosition;
+                                aimReticle.SetActive(true);
+                                getTargetBall().setSlopeByInputPoint(mousePosition);
+                            }
+                        }
+                        else if (gameState == GameState.Action)
+                        {
+                            // clearCircleColliders();
+                            // check if ball was tapped during action
+                            if (ballCollider.OverlapPoint(mousePosition))
+                            {
+                                Debug.Log("Tapped Ball In Motion");
+                                checkActionBallTap();
+                            }
+                        }
+
+                        touchStartPos = Vector2.zero;
+                        touchEndPos = Vector2.zero;
+                    }
                 }
             }
         }
+        
+
+
+        if (Input.GetMouseButtonDown(0))
+        {
+            
+        }*/
 
         if (gameState == GameState.Action && getBallsInPlay() == 0)
         {
@@ -290,4 +408,45 @@ public class GameManager : MonoBehaviour
             // unfreeze
         }
     }
+
+    public void bounceBackground()
+    {
+        Vector3 pos = background.transform.position;
+        if(bgBounced)
+        {
+            // move it back down
+            pos.y -= backgroundBounceAmount;
+        } else
+        {
+            // bounce it up
+            pos.y += backgroundBounceAmount;
+        }
+		//background.transform.position = pos;
+		iTween.MoveTo(background, pos, 0.4f);
+		bgBounced = !bgBounced;
+    }
+
+    private void checkLowerPowerLevel()
+	{
+		sinceLevelLowered += Time.deltaTime;
+
+        if(reachedMax && sinceLevelLowered >= lowerLevelThresholdSeconds)
+		{
+			sinceLevelLowered = 0;
+			updatePowerLevel(powerLevel - 1, false);
+		}
+
+        if(powerLevel < powerMax && reachedMax)
+		{
+			// lowered back to 1, turn off "hyper" mode
+			Ball[] balls = GetComponentsInChildren<Ball>();
+            for(int i = 0; i < balls.Length; i++)
+			{
+				balls[i].v = 0.1f;
+			}
+			reachedMax = false;
+			soundManager.startMusicSlow();
+		}
+	}
+
 }

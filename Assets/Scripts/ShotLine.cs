@@ -6,11 +6,15 @@ public class ShotLine : Barrier
     Vector2 launchPoint;
     public GameObject launchBall;
     bool launchPointSet = false;
+
+    private float launchPointY;
+
     // Use this for initialization
     void Start()
     {
         // default launch point for now
-        launchPoint = new Vector2(0, -4.61f);
+        launchPointY = launchBall.transform.position.y;
+        launchPoint = new Vector2(0, launchPointY);
         launchPointSet = true;
     }
 
@@ -21,11 +25,18 @@ public class ShotLine : Barrier
 
     public void updateLaunchPoint(Vector2 input, GameObject ball)
     {
+        // normalize y to the launch point (to protect from fater moving balls overshoot)
+        input.y = launchPointY;
+
         launchPoint = input;
         launchBall = ball;
         //GameManager gameManager = GetComponentInParent<GameManager>();
         // set the ball back to default size in case it was shrunk
         ball.GetComponent<Ball>().setBallSize();
+
+        // move the ball's position in case we normalized it
+        ball.transform.position = launchPoint;
+
         //gameManager.SetGameState(GameManager.GameState.Aim);
         launchPointSet = true;
     }

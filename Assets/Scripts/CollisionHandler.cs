@@ -60,7 +60,7 @@ public static class CollisionHandler
             if(!shotLine.isLaunchPointSet())
             {
                 ball.setLock(true);
-                ball.transform.position = new Vector2(ball.transform.position.x, -4.61f);
+                //ball.transform.position = new Vector2(ball.transform.position.x, -4.61f);
                 shotLine.updateLaunchPoint(ball.transform.position, ball.gameObject);
                 
             } else {

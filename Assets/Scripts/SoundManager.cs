@@ -30,6 +30,65 @@ public class SoundManager : MonoBehaviour
     // Singleton instance.
     public static SoundManager Instance = null;
 
+    private BeatMap currentBeatmap;
+    private Priority_Queue.SimplePriorityQueue<int> beatQueue;
+    private float beatDeltatime; // I am seconds, don't use me, use
+    private int nextBeat;
+    private bool musicPlaying;
+    private string musicClip;
+
+    private GameManager gameManager;
+
+    private void Update()
+    {
+        if(musicPlaying)
+        {
+            if (!MusicSource.isPlaying)
+            {
+                musicLooper();
+            }
+
+            // check if we've reached the next beat in the queue
+            beatDeltatime += Time.deltaTime;
+
+            if(getBeatDeltaTime() > nextBeat)
+            {
+                // hit beat, fire and setup next one
+                beat();
+                if(beatQueue.Count > 0)
+                {
+                    nextBeat = beatQueue.Dequeue();
+                } else
+                {
+                    // if we reached the end, just reset the beat delta time and start over
+                    beatDeltatime = 0;
+                    nextBeat = 0;
+                    // don't forget to re-write the queue
+                    string jsonString = LoadResourceTextfile("beatmap_stage_music_slow");
+                    currentBeatmap = JsonUtility.FromJson<BeatMap>(jsonString);
+                    for (int i = 0; i < currentBeatmap.beatmap.Length; i++)
+                    {
+                        beatQueue.Enqueue(currentBeatmap.beatmap[i], currentBeatmap.beatmap[i]);
+                    }
+                }
+            }
+        }
+    }
+
+    public void beat() // called on downbeats based on beat map
+    {
+        if(!gameManager)
+        {
+            gameManager = GetComponentInParent<GameManager>();
+        }
+
+        if(nextBeat != 0) //don't count the 0 beat
+        {
+            Debug.Log("BEAT! " + nextBeat.ToString());
+            gameManager.bounceBackground();
+        }
+    }
+
     // Initialize the singleton instance.
     private void Awake()
     {
@@ -65,7 +124,11 @@ public class SoundManager : MonoBehaviour
     {
         MusicSource.Stop();
         MusicSource.clip = slowStageMusic;
-        MusicSource.loop = true;
+        MusicSource.loop = false;
+        musicClip = "beatmap_stage_music_slow";
+        Debug.Log("Starting beat");
+        startBeat();
+        Debug.Log("Starting music");
         MusicSource.Play();
     }
 
@@ -73,8 +136,46 @@ public class SoundManager : MonoBehaviour
     {
         MusicSource.Stop();
         MusicSource.clip = fastStageMusic;
-        MusicSource.loop = true;
+        MusicSource.loop = false;
+        musicClip = "beatmap_stage_music_fast";
+        Debug.Log("Starting beat");
+        startBeat();
+        Debug.Log("Starting music");
         MusicSource.Play();
+    }
+
+    // event that fires when a music clip ends
+    // important to have this so we can re-sync the beat track
+    private void musicLooper()
+    {
+        if(musicClip == "beatmap_stage_music_slow")
+        {
+            startMusicSlow();
+        } else if (musicClip == "beatmap_stage_music_fast")
+        {
+            startMusicFast();
+        }
+    }
+
+    private void startBeat()
+    {
+        // write the beatmap
+        string jsonString = LoadResourceTextfile(musicClip);
+        currentBeatmap = JsonUtility.FromJson<BeatMap>(jsonString);
+
+        // use the beatmap to generate the beat queue, apply offset if there is one
+        beatQueue = new Priority_Queue.SimplePriorityQueue<int>(); // make an empty queue
+        // enqueue all the beats
+        for(int i = 0; i < currentBeatmap.beatmap.Length; i++)
+        {
+            beatQueue.Enqueue(currentBeatmap.beatmap[i] + currentBeatmap.offset, currentBeatmap.beatmap[i] + currentBeatmap.offset);
+        }
+
+        // reset beat delta time
+        beatDeltatime = 0;
+        nextBeat = 0;
+
+        musicPlaying = true; // this starts the update incrementing delta time
     }
 
     public void startEndMusic()
@@ -128,4 +229,22 @@ public class SoundManager : MonoBehaviour
         }
     }
 
+    public static string LoadResourceTextfile(string name)
+    {
+        TextAsset targetFile = Resources.Load<TextAsset>(name);
+        return targetFile.text;
+    }
+
+    private int getBeatDeltaTime() // use me to get MS
+    {
+        return Mathf.FloorToInt(beatDeltatime * 1000);
+    }
+}
+
+[System.Serializable]
+public class BeatMap
+{
+    public string title;
+    public int offset;
+    public int[] beatmap;
 }
