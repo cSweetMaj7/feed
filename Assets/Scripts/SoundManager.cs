@@ -84,7 +84,7 @@ public class SoundManager : MonoBehaviour
 
         if(nextBeat != 0) //don't count the 0 beat
         {
-            Debug.Log("BEAT! " + nextBeat.ToString());
+            //Debug.Log("BEAT! " + nextBeat.ToString());
             gameManager.bounceBackground();
         }
     }

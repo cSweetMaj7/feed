@@ -25,7 +25,7 @@ public class ShotLine : Barrier
 
     public void updateLaunchPoint(Vector2 input, GameObject ball)
     {
-        // normalize y to the launch point (to protect from fater moving balls overshoot)
+        // normalize y to the launch point (to protect from faster moving balls overshoot)
         input.y = launchPointY;
 
         launchPoint = input;
@@ -33,6 +33,7 @@ public class ShotLine : Barrier
         //GameManager gameManager = GetComponentInParent<GameManager>();
         // set the ball back to default size in case it was shrunk
         ball.GetComponent<Ball>().setBallSize();
+        ball.GetComponent<Ball>().isLaunchBall = true;
 
         // move the ball's position in case we normalized it
         ball.transform.position = launchPoint;

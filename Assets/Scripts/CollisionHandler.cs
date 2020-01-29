@@ -30,6 +30,7 @@ public static class CollisionHandler
                     GameObject splitBall = GameObject.Instantiate(ball.gameObject);
                     splitBall.gameObject.transform.parent = gameManager.gameObject.transform;
                     Ball newBall = splitBall.GetComponent<Ball>();
+                    newBall.isLaunchBall = false;
 
                     int powerLevel = gameManager.getPowerLevel();
                     newBall.setResources(powerLevel, powerLevel, powerLevel, powerLevel);

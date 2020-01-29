@@ -2,54 +2,86 @@
 using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
+using System.Linq;
 
 public class GameManager : MonoBehaviour
 {
+    [Tooltip("The one and only game camera.")]
     public Camera mainCamera;
+
+    [Tooltip("The game object which has the aim reticle sprite. Used for aiming.")]
     public GameObject aimReticle;
+
+    [Tooltip("The game object that contains the ShotLine component. The ShotLine " +
+        "is normally attached to the bottom playfield boundary. Its function is to serve " +
+        "as a launching point for the ball as well as catch the ball, set it up for" +
+        " the next shot and dispose of clone balls.")]
     public GameObject shotLine;
+
+    [Tooltip("Reference to the TargetField, which contains and controls all the Targets on the playfield.")]
     public TargetField targetField;
+
+    [Tooltip("Reference to the text that displays the current power level.")]
     public TextMeshProUGUI powerText;
+
+    [Tooltip("Reference to the sound manager.")]
     public SoundManager soundManager;
+
+    [Tooltip("The game object that contains the background sprite.")]
     public GameObject background;
 
+    [Tooltip("Text that appears at the top of the dialog.")]
     public TextMeshProUGUI dialogHeaderText;
+
+    [Tooltip("Text that appears as the body of the dialog.")]
     public TextMeshProUGUI dialogBodyText;
+
+    [Tooltip("Left button text.")]
     public TextMeshProUGUI dialogLeftButtonText;
+
+    [Tooltip("Right button text.")]
     public TextMeshProUGUI dialogRightButtonText;
 
-    private int powerLevel;
+    [Tooltip("Sets the maximum that power level can grow to. Also represents the level at which splitting is turned on.")]
     public int powerMax = 2;
-	private bool reachedMax;
-	private float sinceLevelLowered;
-	public float lowerLevelThresholdSeconds = 3.0f;
 
-    private bool awaitingReflect;
-    private float sinceReflect;
-    private float sinceTap;
+    [Tooltip("Sets how many seconds to remain at max level once reached, then reduce back to 1.")]
+    public float maxLevelTime = 3.0f;
 
+    [Tooltip("Sets the number of seconds, before and after a reflection, that a ball tap will be accepted. Lower is harder, bigger is easier.")]
     public float timingWindow = 0.25f;
+
+    [Tooltip("Sets how much to advance ball velocity by each time power levels up.")]
     public float advanceVelocity = 0.02f;
 
-    private List<Target> targetList;
-    GameState gameState = GameState.Aim; // starts off in aim state
+    [Tooltip("A reference to the UI Canvas.")]
+    public Canvas UICanvas;
 
-    private bool gameEnded;
-    private bool failed;
+    [Tooltip("Sets how far, vertically, background is bounced on each beat. Bigger = motion sickness.")]
+    public float backgroundBounceAmount = 0.25f;
+
+    [Tooltip("The current game state.")]
+    public GameState gameState = GameState.Aim; // starts off in aim state
+
+    [Tooltip("Sets the number of frames to freeze on freeze actions.")]
+    public int freezeActionFrames = 5;
+
+    private int powerLevel; // keeps track of the current power level
+	private bool reachedMax; // true when the current power level is the maximum level
+	private float sinceLevelLowered; // seconds since we started lowering the level
+    private bool awaitingReflect; // used for validating early inputs to ball tapping
+    private float sinceReflect; // used for validating late inputs to ball tapping, seconds since the reflect
+    private float sinceTap; // used for validating ball taps, seconds since input
+
+    private bool gameEnded; // local switch for knowing if the game has ended or not
+    private bool failed; // set on game end, whether or not the player has failed
     private int frozeActionFrames;
-    private int freezeActionFrames;
-
+    
     private Vector2 touchStartPos;
     private Vector2 touchEndPos;
     private bool aimed;
     private bool startedMusic;
-
     private bool bgBounced;
-
-    public Canvas UICanvas;
-
-    public float backgroundBounceAmount = 0.25f;
-
     private float sinceStart;
 
     public enum GameState
@@ -77,8 +109,6 @@ public class GameManager : MonoBehaviour
         updatePowerLevel(1, true);
         aimReticle.SetActive(false);
     }
-
-
 
     Ball getTargetBall()
     {
@@ -161,13 +191,18 @@ public class GameManager : MonoBehaviour
             endGame();
         }
 
+        Rigidbody2D ballCollider = null;
         Vector2 mousePosition = Camera.main.ScreenToWorldPoint(Input.mousePosition);
-        Rigidbody2D ballCollider = getTargetBall().GetComponent<Rigidbody2D>();
-
+        Ball targetBall = getTargetBall();
+        if(targetBall)
+        {
+            ballCollider = getTargetBall().GetComponent<Rigidbody2D>();
+        }
+        
 		// instead of GetMouseButtonDown start looking at touches and figuring out what we need to do
 		// use mouse clicks when in eidtor. Otherwise fall back to touches, which is what will be used on-device
 
-		if (Input.GetMouseButtonDown(0))
+		if (ballCollider && Input.GetMouseButtonDown(0))
 		{
 			if (gameState == GameState.Aim)
 			{
@@ -357,7 +392,7 @@ public class GameManager : MonoBehaviour
         if (gameEnded)
         {
             string header = failed ? "Failure..." : "Victory!";
-            string body = failed ? "You can't win em' all and you didn't win this one. Better luck next time." : "The victor writes the history book and this time it's YOU! Get writing, Victor!";
+            string body = failed ? "You can't win em' all and you didn't win this one. Better luck next time." : "The victor writes the history book and this time it's YOU! Get to writing, Victor!";
             string left = "Retry";
             string right = "Next";
 
@@ -395,9 +430,8 @@ public class GameManager : MonoBehaviour
 
     // locks the position of all balls on the field
     // 
-    public void freezeAction(int frames)
+    public void freezeAction()
     {
-        freezeActionFrames = frames;
         frozeActionFrames = 1;
     }
 
@@ -406,6 +440,7 @@ public class GameManager : MonoBehaviour
         if(frozeActionFrames >= freezeActionFrames)
         {
             // unfreeze
+            frozeActionFrames = 0;
         }
     }
 
@@ -430,7 +465,7 @@ public class GameManager : MonoBehaviour
 	{
 		sinceLevelLowered += Time.deltaTime;
 
-        if(reachedMax && sinceLevelLowered >= lowerLevelThresholdSeconds)
+        if(reachedMax && sinceLevelLowered >= maxLevelTime)
 		{
 			sinceLevelLowered = 0;
 			updatePowerLevel(powerLevel - 1, false);
@@ -438,9 +473,19 @@ public class GameManager : MonoBehaviour
 
         if(powerLevel < powerMax && reachedMax)
 		{
-			// lowered back to 1, turn off "hyper" mode
-			Ball[] balls = GetComponentsInChildren<Ball>();
-            for(int i = 0; i < balls.Length; i++)
+            // remove all but the launch ball
+            // lowered back to 1, turn off "hyper" mode
+            Ball[] balls = GetComponentsInChildren<Ball>();
+            Debug.Log("launch ball already set, get rid of the rest");
+            for (int i = 0; i < balls.Length; i++)
+            {
+                if (!balls[i].isLaunchBall)
+                {
+                    GameObject.Destroy(balls[i].gameObject);
+                }
+            }
+
+            for (int i = 0; i < balls.Length; i++)
 			{
 				balls[i].v = 0.1f;
 			}
@@ -448,5 +493,4 @@ public class GameManager : MonoBehaviour
 			soundManager.startMusicSlow();
 		}
 	}
-
 }
