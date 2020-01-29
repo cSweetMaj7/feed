@@ -1,6 +1,8 @@
+[![Watch the video](https://i.imgur.com/0VVDiZI.png)](https://www.youtube.com/watch?v=zmRw-oBXbBw)
+
 # feed
 
-**feed** is a [Breakout](https://en.wikipedia.org/wiki/Breakout_(video_game) inspired game that pits the player's pizza ball against a field of hungry pizza boxes. I put this game together on my own as a practice project. I was inspired by the incredible drive and generosity of [TheFreePizzaDude](https://imgur.com/user/TheFreePizzaDude), an Imgur user of grand repute. I participated in his donation drives (Imgur users are regularly encouraged via TheFreePizzaDude's popular posts to donate a pizza delivery to those who identify as in-need), which led me to devise a pizza-themed game that might drive ad revenue to support hungry people.
+**feed** is a [Breakout](https://en.wikipedia.org/wiki/Breakout_(video_game)) inspired game that pits the player's pizza ball against a field of hungry pizza boxes. I put this game together on my own as a practice project. I was inspired by the incredible drive and generosity of [TheFreePizzaDude](https://imgur.com/user/TheFreePizzaDude), an Imgur user of grand repute. I participated in his donation drives (Imgur users are regularly encouraged via TheFreePizzaDude's popular posts to donate a pizza delivery to those who identify as in-need), which led me to devise a pizza-themed game that might drive ad revenue to support hungry people.
 
 
 
@@ -24,4 +26,4 @@ Once the user reaches a predetermined Power Level (5 in the demo) the player wil
 
 ## Additional Features
 **Audio**
-This game makes use of an audio synchronization system which I developed myself and have used in other project (see [World of Color Simulation](https://github.com/JetsterDajet/WorldOfColor). The game start out with slow music, with the background bouncing along with the beat of the music. When the player enters Hyper Mode the music is kicked up in tempo and intensity; the background continues to bounce in sync with the rhythm of the music. Though this feature has no bearing on the outcome of gameplay, it lends a very fun and engaging experience to the player.
+This game makes use of an audio synchronization system which I developed myself and have used in other project (see [World of Color Simulation](https://github.com/JetsterDajet/WorldOfColor)). The game start out with slow music, with the background bouncing along with the beat of the music. When the player enters Hyper Mode the music is kicked up in tempo and intensity; the background continues to bounce in sync with the rhythm of the music. Though this feature has no bearing on the outcome of gameplay, it lends a very fun and engaging experience to the player.
